@@ -1,0 +1,9 @@
+Package: com.doctorpewds.reddirect
+Name: Reddirect
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Redirects all reddit links in Safari to old.reddit.com
+Maintainer: doctorpewds
+Author: doctorpewds
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000)
