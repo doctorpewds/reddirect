@@ -1,8 +1,6 @@
 #import <UIKit/UIKit.h>
-#import <SafariServices/SafariServices.h>
 #import <WebKit/WebKit.h>
 #import <objc/runtime.h>
-#import <objc/message.h>  // for objc_msgSend
 
 static BOOL enableLogging = NO;
 
@@ -22,6 +20,16 @@ void logToFile(NSString *message) {
         [fileHandle writeData:[fullMessage dataUsingEncoding:NSUTF8StringEncoding]];
         [fileHandle closeFile];
     }
+}
+
+BOOL isTweakEnabled() {
+    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@"/User/Library/Preferences/com.doctorpewds.reddirectprefs.plist"];
+    if (prefs) {
+        logToFile([NSString stringWithFormat:@"📦 Loaded Preferences:\n%@", prefs]);
+    } else {
+        logToFile(@"⚠️ Could not load preferences file.");
+    }
+    return [[prefs objectForKey:@"enabled"] boolValue];
 }
 
 static IMP original_decidePolicyIMP = NULL;
@@ -61,10 +69,6 @@ static void swizzled_decidePolicy(id self, SEL _cmd, WKWebView *webView, WKNavig
     }
 }
 
-%ctor {
-    logToFile(@"✅ Reddirect tweak loaded.");
-}
-
 NSURLRequest *rewriteRedditRequestIfNeeded(NSURLRequest *request) {
     NSURL *url = request.URL;
     if (!url) return request;
@@ -81,6 +85,8 @@ NSURLRequest *rewriteRedditRequestIfNeeded(NSURLRequest *request) {
     }
     return request;
 }
+
+%group ReddirectHooks
 
 %hook WKWebView
 
@@ -123,3 +129,14 @@ NSURLRequest *rewriteRedditRequestIfNeeded(NSURLRequest *request) {
 }
 
 %end
+
+%end
+
+%ctor {
+	if (isTweakEnabled()) {
+		logToFile(@"✅ Enabling ReddirectHooks");
+		%init(ReddirectHooks);
+	} else {
+		logToFile(@"🚫 Reddirect disabled, skipping %init");
+	}
+}
